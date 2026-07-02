@@ -10,7 +10,6 @@
       --rojo-osc: #9a0007;
       --gris: #455a64;
       --gris-osc: #1c313a;
-      --ok: #2e7d32;
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -43,8 +42,8 @@
   </style>
 </head>
 <body>
-  <h1>🚨 SIRENA VECINAL BONANZA</h1>
-  <p class="sub">Asociación — Uso solo en emergencias</p>
+  <h1>🚨 SIRENA ASOSIACIÓN BONANZA</h1>
+  <p class="sub">Uso para emergencias. Sal de casa al escuchar la sirena.</p>
 
   <button class="btn btn-on" id="btnOn" onclick="activar('on')">
     <span class="icono">🔔</span> ACTIVAR
@@ -55,10 +54,9 @@
   </button>
 
   <div id="estado">Listo.</div>
-  <div class="pie">Solo para uso responsable de la comunidad</div>
+  <div class="pie">@Creado por Antonhy Pinto</div>
 
   <script>
-    // URLs de los webhooks de eWeLink (escenas Encender / Apagar Sirena)
     const WEBHOOKS = {
       on:  "https://us-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=638a51f14dd74cc485d6125fd08e9556",
       off: "https://us-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=9df5289c0995401193ebec4dbfa13a79"
@@ -74,28 +72,18 @@
     }
 
     async function activar(accion) {
-      // Confirmacion solo al ACTIVAR, para evitar toques accidentales
-      if (accion === "on") {
-        if (!confirm("¿Activar la SIRENA de la comunidad?\nSolo en caso de emergencia real.")) {
-          return;
-        }
-      }
-
       btnOn.disabled = true; btnOff.disabled = true;
       setEstado(accion === "on" ? "Activando sirena..." : "Apagando sirena...", "");
 
       try {
-        // no-cors: disparamos el webhook sin leer la respuesta (evita bloqueo CORS).
-        // Para un boton de panico solo importa que la peticion llegue.
         await fetch(WEBHOOKS[accion], { method: "GET", mode: "no-cors", cache: "no-store" });
         setEstado(
-          accion === "on" ? "✅ Señal enviada. La sirena debe sonar." : "✅ Señal enviada. La sirena se apaga.",
+          accion === "on" ? "\u2705 Se\u00f1al enviada. La sirena debe sonar." : "\u2705 Se\u00f1al enviada. La sirena se apaga.",
           "ok"
         );
       } catch (e) {
-        setEstado("⚠️ Error de red. Revisa tu conexión e intenta de nuevo.", "err");
+        setEstado("\u26a0\ufe0f Error de red. Revisa tu conexi\u00f3n e intenta de nuevo.", "err");
       } finally {
-        // Reactivar botones tras 3s (evita spam accidental de la nube)
         setTimeout(() => { btnOn.disabled = false; btnOff.disabled = false; }, 3000);
       }
     }
