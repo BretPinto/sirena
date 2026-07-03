@@ -39,34 +39,121 @@
     #estado.ok { color: #69f0ae; }
     #estado.err { color: #ff8a80; }
     .pie { font-size: 12px; color: #546e7a; text-align: center; margin-top: 4px; }
+
+    /* --- AGREGADO: pantalla de login (mismo estilo) --- */
+    #login, #app { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .input-nombre {
+      width: 100%; max-width: 420px; border: 2px solid #263845; border-radius: 20px;
+      padding: 24px 20px; font-size: 22px; text-align: center;
+      background: #16212b; color: #fff; outline: none;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+    .input-nombre:focus { border-color: var(--gris); }
+    .btn-entrar { background: linear-gradient(160deg, var(--gris), var(--gris-osc)); padding: 24px 20px; font-size: 24px; }
+    #msgLogin { min-height: 24px; font-size: 15px; text-align: center; color: #ff8a80; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <h1>🚨SIRENA ASOCIACIÓN BONANZA</h1>
-  <p class="sub">Uso para emergencias. Sal de casa al escuchar la sirena.</p>
-  <button class="btn btn-on" id="btnOn" onclick="activar('on')">
-    <span class="icono">🔔</span> ACTIVAR
-  </button>
-  <button class="btn btn-off" id="btnOff" onclick="activar('off')">
-    <span class="icono">🔕</span> APAGAR
-  </button>
-  <div id="estado">Listo.</div>
-  <div class="pie">2026 @ Creado por Antonhy Pinto</div>
+
+  <!-- PANTALLA DE LOGIN (solo la 1ra vez en cada celular) -->
+  <div id="login">
+    <h1>🚨SIRENA ASOCIACIÓN BONANZA</h1>
+    <p class="sub">Vecino, ingresa tu nombre para ingresar.<br>Solo se pedirá una vez en este celular.</p>
+    <input id="inputNombre" class="input-nombre" type="text" placeholder="Tu usuario" autocomplete="off" autocapitalize="off" />
+    <button class="btn btn-entrar" id="btnEntrar" onclick="entrar()">ENTRAR</button>
+    <div id="msgLogin"></div>
+  </div>
+
+  <!-- PANTALLA DE CONTROL (tu página original, intacta) -->
+  <div id="app" class="hidden">
+    <h1>🚨SIRENA ASOCIACIÓN BONANZA</h1>
+    <p class="sub">Uso para emergencias. Sal de casa al escuchar la sirena.</p>
+    <button class="btn btn-on" id="btnOn" onclick="activar('on')">
+      <span class="icono">🔔</span> ACTIVAR
+    </button>
+    <button class="btn btn-off" id="btnOff" onclick="activar('off')">
+      <span class="icono">🔕</span> APAGAR
+    </button>
+    <div id="estado">Listo.</div>
+    <div class="pie">2026 @ Creado por Antonhy Pinto</div>
+  </div>
+
   <script>
     const WEBHOOKS = {
       on:  "https://us-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=638a51f14dd74cc485d6125fd08e9556",
       off: "https://us-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=9df5289c0995401193ebec4dbfa13a79"
     };
+
+    /* --- AGREGADO: config del log --- */
+    const VECINOS = [
+      "Celmira", "Guillermo", "Antonhy", "Jehime", "Dany", "Jessica", "Carlos",
+      "Froilan", "Noemi", "Pfuño", "Efrain", "Patricia" , "Grecia", "Maria Elena"
+    ];
+    const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSdBmjcuIuJ79Y3WB7cLwrIa4snAKiXmHvCKwbNdTNxJQdSz7A/formResponse";
+    const CAMPO_NOMBRE = "entry.249673066";
+    const CAMPO_ACCION = "entry.975896255";
+
     const estado = document.getElementById("estado");
     const btnOn  = document.getElementById("btnOn");
     const btnOff = document.getElementById("btnOff");
+
+    /* --- AGREGADO: login --- */
+    const login = document.getElementById("login");
+    const app   = document.getElementById("app");
+    const inputNombre = document.getElementById("inputNombre");
+
+    function norm(s) {
+      return s.toLowerCase().trim()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+    }
+    function validar(entrada) {
+      const e = norm(entrada);
+      for (let i = 0; i < VECINOS.length; i++) {
+        if (norm(VECINOS[i]) === e) { return VECINOS[i]; }
+      }
+      return null;
+    }
+    function mostrarApp()   { login.classList.add("hidden"); app.classList.remove("hidden"); }
+    function mostrarLogin() { app.classList.add("hidden"); login.classList.remove("hidden"); }
+
+    function entrar() {
+      const canon = validar(inputNombre.value);
+      if (canon) {
+        localStorage.setItem("vecino_sirena", canon);
+        mostrarApp();
+      } else {
+        document.getElementById("msgLogin").textContent = "Usuario no reconocido.";
+      }
+    }
+    inputNombre.addEventListener("keydown", function (ev) {
+      if (ev.key === "Enter") { entrar(); }
+    });
+
+    window.addEventListener("load", function () {
+      const g = localStorage.getItem("vecino_sirena");
+      if (g) { mostrarApp(); } else { mostrarLogin(); }
+    });
+
+    /* --- AGREGADO: envío al log --- */
+    function enviarLog(accionLog) {
+      const nombre = localStorage.getItem("vecino_sirena") || "desconocido";
+      const url = FORM + "?" + CAMPO_NOMBRE + "=" + encodeURIComponent(nombre) +
+                  "&" + CAMPO_ACCION + "=" + encodeURIComponent(accionLog) +
+                  "&submit=Submit";
+      fetch(url, { mode: "no-cors", cache: "no-store" });
+    }
+
     function setEstado(txt, tipo) {
       estado.textContent = txt;
       estado.className = tipo || "";
     }
+
     async function activar(accion) {
       btnOn.disabled = true; btnOff.disabled = true;
       setEstado(accion === "on" ? "Activando sirena..." : "Apagando sirena...", "");
+      enviarLog(accion === "on" ? "ENCENDIÓ" : "APAGÓ");   /* --- AGREGADO --- */
       try {
         await fetch(WEBHOOKS[accion], { method: "GET", mode: "no-cors", cache: "no-store" });
         setEstado(
