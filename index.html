@@ -1,31 +1,76 @@
-<!DOCTYPE html>  <!-- Versión 1.5 02/07/26 19:24 -->
+<!DOCTYPE html>  <!-- Versión 1.6 02/07/26 19:43 - tema claro/oscuro -->
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Sirena Bonanza</title>
+
+  <!-- Aplica el tema guardado ANTES de pintar, para que no parpadee -->
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("tema_sirena") === "dark") {
+          document.documentElement.setAttribute("data-theme", "dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <style>
     :root {
+      /* Colores de los botones (iguales en ambos temas) */
       --rojo: #d32f2f;
       --rojo-osc: #9a0007;
       --gris: #455a64;
       --gris-osc: #1c313a;
+
+      /* ---- TEMA CLARO (por defecto) ---- */
+      --bg: #eef1f4;
+      --texto: #1c2b36;
+      --sub: #607d8b;
+      --estado: #546e7a;
+      --ok: #2e7d32;
+      --err: #c62828;
+      --pie: #90a4ae;
+      --input-bg: #ffffff;
+      --input-borde: #cfd8dc;
+      --sombra: rgba(0,0,0,.18);
+      --toggle-bg: rgba(0,0,0,.05);
+      --toggle-borde: rgba(0,0,0,.12);
     }
+
+    /* ---- TEMA OSCURO ---- */
+    html[data-theme="dark"] {
+      --bg: #0f1720;
+      --texto: #ffffff;
+      --sub: #90a4ae;
+      --estado: #b0bec5;
+      --ok: #69f0ae;
+      --err: #ff8a80;
+      --pie: #546e7a;
+      --input-bg: #16212b;
+      --input-borde: #263845;
+      --sombra: rgba(0,0,0,.4);
+      --toggle-bg: rgba(255,255,255,.08);
+      --toggle-borde: rgba(255,255,255,.15);
+    }
+
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
       margin: 0; min-height: 100vh;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      background: #0f1720; color: #fff;
+      background: var(--bg); color: var(--texto);
       display: flex; flex-direction: column; align-items: center;
       padding: 24px 16px; gap: 16px;
+      transition: background .25s ease, color .25s ease;
     }
     h1 { font-size: 22px; margin: 8px 0 0; text-align: center; letter-spacing: .5px; }
-    .sub { color: #90a4ae; font-size: 14px; margin: 0 0 8px; text-align: center; }
+    .sub { color: var(--sub); font-size: 14px; margin: 0 0 8px; text-align: center; }
     .btn {
       width: 100%; max-width: 420px; border: none; border-radius: 20px;
       padding: 42px 20px; font-size: 30px; font-weight: 800; color: #fff;
       cursor: pointer; letter-spacing: 1px; transition: transform .08s, filter .15s;
-      box-shadow: 0 8px 24px rgba(0,0,0,.4); touch-action: manipulation;
+      box-shadow: 0 8px 24px var(--sombra); touch-action: manipulation;
     }
     .btn:active { transform: scale(.97); }
     .btn-on  { background: linear-gradient(160deg, var(--rojo), var(--rojo-osc)); }
@@ -34,27 +79,41 @@
     .icono { display: block; font-size: 40px; margin-bottom: 6px; }
     #estado {
       min-height: 24px; font-size: 15px; text-align: center;
-      color: #b0bec5; max-width: 420px; transition: color .2s;
+      color: var(--estado); max-width: 420px; transition: color .2s;
     }
-    #estado.ok { color: #69f0ae; }
-    #estado.err { color: #ff8a80; }
-    .pie { font-size: 12px; color: #546e7a; text-align: center; margin-top: 4px; }
+    #estado.ok { color: var(--ok); }
+    #estado.err { color: var(--err); }
+    .pie { font-size: 12px; color: var(--pie); text-align: center; margin-top: 4px; }
 
-    /* --- AGREGADO: pantalla de login (mismo estilo) --- */
+    /* --- pantalla de login (mismo estilo) --- */
     #login, #app { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 16px; }
     .input-nombre {
-      width: 100%; max-width: 420px; border: 2px solid #263845; border-radius: 20px;
+      width: 100%; max-width: 420px; border: 2px solid var(--input-borde); border-radius: 20px;
       padding: 24px 20px; font-size: 22px; text-align: center;
-      background: #16212b; color: #fff; outline: none;
-      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+      background: var(--input-bg); color: var(--texto); outline: none;
+      box-shadow: 0 8px 24px var(--sombra);
+      transition: background .25s ease, color .25s ease, border-color .15s;
     }
     .input-nombre:focus { border-color: var(--gris); }
     .btn-entrar { background: linear-gradient(160deg, var(--gris), var(--gris-osc)); padding: 24px 20px; font-size: 24px; }
-    #msgLogin { min-height: 24px; font-size: 15px; text-align: center; color: #ff8a80; }
+    #msgLogin { min-height: 24px; font-size: 15px; text-align: center; color: var(--err); }
     .hidden { display: none !important; }
+
+    /* --- botón de cambio de tema --- */
+    .toggle-tema {
+      position: fixed; top: 14px; right: 14px;
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid var(--toggle-borde); background: var(--toggle-bg);
+      color: var(--texto); font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 10; transition: background .25s ease, border-color .25s ease;
+    }
+    .toggle-tema:active { transform: scale(.92); }
   </style>
 </head>
 <body>
+
+  <button class="toggle-tema" id="toggleTema" onclick="cambiarTema()" aria-label="Cambiar tema">🌙</button>
 
   <!-- PANTALLA DE LOGIN (solo la 1ra vez en cada celular) -->
   <div id="login">
@@ -68,7 +127,7 @@
   <!-- PANTALLA DE CONTROL (tu página original, intacta) -->
   <div id="app" class="hidden">
     <h1>🚨SIRENA ASOCIACIÓN BONANZA</h1>
-    <p class="sub">Uso para emergencias. Sal de casa al escuchar la sirena, por favor.</p>
+    <p class="sub">Uso para emergencias. Sal de casa al escuchar la sirena.</p>
     <button class="btn btn-on" id="btnOn" onclick="activar('on')">
       <span class="icono">🔔</span> ACTIVAR
     </button>
@@ -85,10 +144,10 @@
       off: "https://us-apia.coolkit.cc/v2/smartscene2/webhooks/execute?id=9df5289c0995401193ebec4dbfa13a79"
     };
 
-    /* --- AGREGADO: config del log --- */
+    /* --- config del log --- */
     const VECINOS = [
       "Celmira", "Guillermo", "Antonhy", "Jehime", "Dany", "Jessica", "Carlos",
-      "Froilan", "Noemi", "Pfuño", "Efrain", "Patricia" , "Grecia", "Maria Elena"
+      "Froilan", "Noemi", "Pfuño", "Efrain", "Patricia", "Grecia", "Maria Elena"
     ];
     const FORM = "https://docs.google.com/forms/d/e/1FAIpQLSdBmjcuIuJ79Y3WB7cLwrIa4snAKiXmHvCKwbNdTNxJQdSz7A/formResponse";
     const CAMPO_NOMBRE = "entry.249673066";
@@ -98,7 +157,7 @@
     const btnOn  = document.getElementById("btnOn");
     const btnOff = document.getElementById("btnOff");
 
-    /* --- AGREGADO: login --- */
+    /* --- login --- */
     const login = document.getElementById("login");
     const app   = document.getElementById("app");
     const inputNombre = document.getElementById("inputNombre");
@@ -131,12 +190,28 @@
       if (ev.key === "Enter") { entrar(); }
     });
 
+    /* --- tema claro/oscuro --- */
+    function aplicarTema(t) {
+      const dark = (t === "dark");
+      if (dark) { document.documentElement.setAttribute("data-theme", "dark"); }
+      else { document.documentElement.removeAttribute("data-theme"); }
+      const btn = document.getElementById("toggleTema");
+      if (btn) { btn.textContent = dark ? "☀️" : "🌙"; }
+    }
+    function cambiarTema() {
+      const actual = localStorage.getItem("tema_sirena") === "dark" ? "dark" : "light";
+      const nuevo = actual === "dark" ? "light" : "dark";
+      localStorage.setItem("tema_sirena", nuevo);
+      aplicarTema(nuevo);
+    }
+
     window.addEventListener("load", function () {
+      aplicarTema(localStorage.getItem("tema_sirena") || "light");
       const g = localStorage.getItem("vecino_sirena");
       if (g) { mostrarApp(); } else { mostrarLogin(); }
     });
 
-    /* --- AGREGADO: envío al log --- */
+    /* --- envío al log --- */
     function enviarLog(accionLog) {
       const nombre = localStorage.getItem("vecino_sirena") || "desconocido";
       const url = FORM + "?" + CAMPO_NOMBRE + "=" + encodeURIComponent(nombre) +
@@ -153,7 +228,7 @@
     async function activar(accion) {
       btnOn.disabled = true; btnOff.disabled = true;
       setEstado(accion === "on" ? "Activando sirena..." : "Apagando sirena...", "");
-      enviarLog(accion === "on" ? "ENCENDIÓ" : "APAGÓ");   /* --- AGREGADO --- */
+      enviarLog(accion === "on" ? "ENCENDIÓ" : "APAGÓ");
       try {
         await fetch(WEBHOOKS[accion], { method: "GET", mode: "no-cors", cache: "no-store" });
         setEstado(
